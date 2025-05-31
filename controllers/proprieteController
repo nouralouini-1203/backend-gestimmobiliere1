@@ -1,0 +1,63 @@
+const Propriete = require('../models/propriete');
+
+// GET /proprietes
+exports.getAllProprietes = async (req, res) => {
+  try {
+    const filtre = {};
+    if (req.query.localisation) filtre.localisation = req.query.localisation;
+    if (req.query.prixMin) filtre.prix = { ...filtre.prix, $gte: req.query.prixMin };
+    if (req.query.prixMax) filtre.prix = { ...filtre.prix, $lte: req.query.prixMax };
+
+    const proprietes = await Propriete.find(filtre).populate('proprietaire', 'nom email');
+    res.json(proprietes);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// GET /proprietes/:id
+exports.getProprieteById = async (req, res) => {
+  try {
+    const propriete = await Propriete.findById(req.params.id).populate('proprietaire', 'nom email');
+    if (!propriete) return res.status(404).json({ message: 'Propriété introuvable' });
+    res.json(propriete);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// POST /proprietes
+exports.createPropriete = async (req, res) => {
+  try {
+    const propriete = new Propriete({
+      ...req.body,
+      proprietaire: req.user._id // req.user injecté via middleware d'auth
+    });
+    const saved = await propriete.save();
+    res.status(201).json(saved);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// PUT /proprietes/:id
+exports.updatePropriete = async (req, res) => {
+  try {
+    const propriete = await Propriete.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!propriete) return res.status(404).json({ message: 'Propriété introuvable' });
+    res.json(propriete);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// DELETE /proprietes/:id
+exports.deletePropriete = async (req, res) => {
+  try {
+    const propriete = await Propriete.findByIdAndDelete(req.params.id);
+    if (!propriete) return res.status(404).json({ message: 'Propriété introuvable' });
+    res.json({ message: 'Propriété supprimée' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

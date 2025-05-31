@@ -1,0 +1,68 @@
+const Reservation = require('../models/reservation');
+
+// POST /reservations
+exports.createReservation = async (req, res) => {
+  try {
+    const reservation = new Reservation(req.body);
+    await reservation.save();
+    res.status(201).json(reservation);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// GET /reservations
+exports.getAllReservations = async (req, res) => {
+  try {
+    const reservations = await Reservation.find().populate('propriete locataire proprietaire');
+    res.json(reservations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET /reservations/locataire/:id
+exports.getReservationsByLocataire = async (req, res) => {
+  try {
+    const reservations = await Reservation.find({ locataire: req.params.id }).populate('propriete');
+    res.json(reservations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET /reservations/proprietaire/:id
+exports.getReservationsByProprietaire = async (req, res) => {
+  try {
+    const reservations = await Reservation.find({ proprietaire: req.params.id }).populate('propriete');
+    res.json(reservations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// PUT /reservations/:id
+exports.updateReservationStatus = async (req, res) => {
+  try {
+    const reservation = await Reservation.findByIdAndUpdate(
+      req.params.id,
+      { statut: req.body.statut },
+      { new: true }
+    );
+    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+    res.json(reservation);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// DELETE /reservations/:id
+exports.deleteReservation = async (req, res) => {
+  try {
+    const reservation = await Reservation.findByIdAndDelete(req.params.id);
+    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
+    res.json({ message: 'Reservation deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
